@@ -16,9 +16,11 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use stdClass;
 
 class StudentResource extends Resource
 {
@@ -66,6 +68,16 @@ class StudentResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('No')->state(
+                    static function (HasTable $livewire, stdClass $rowLoop): string {
+                        return (string) (
+                            $rowLoop->iteration +
+                            ($livewire->getTableRecordsPerPage() * (
+                                $livewire->getTablePage() - 1
+                            ))
+                        );
+                    }
+                ),
                 TextColumn::make('nis')
                     ->label('NIS'), 
                 TextColumn::make('name')
@@ -105,4 +117,16 @@ class StudentResource extends Resource
             'edit' => Pages\EditStudent::route('/{record}/edit'),
         ];
     }
+
+    public static function getLabel(): ?string
+    {
+        $locale = app()->getLocale();
+
+        if ($locale == 'id') {
+            return "Murid";
+        } else {
+            return "Students";
+        }
+    }
+
 }
