@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\StudentResource\Pages;
-use App\Filament\Resources\StudentResource\RelationManagers;
 use App\Models\Student;
 use Filament\Forms;
 use Filament\Forms\Components\Card;
@@ -14,7 +13,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
-use Filament\Notifications\Collection;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\BulkAction;
@@ -22,8 +20,7 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use stdClass;
 
 class StudentResource extends Resource
@@ -104,27 +101,23 @@ class StudentResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    BulkAction::make('Accept')
+                    BulkAction::make('Change Status')
                         ->icon('heroicon-m-check')
                         ->requiresConfirmation()
-                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
-                            return $records->each->update(['status' => 'accept']);
-                        }),
-                    BulkAction::make('Off')
-                        ->icon('heroicon-m-x-circle')
-                        ->requiresConfirmation()
-                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
-                            return $records->each(function ($record) {
-                                $id = $record->id;
-                                Student::where('id', $id)->update(['status' => 'off']);
+                        ->form([
+                            Select::make('Status')
+                                ->label('Status')
+                                ->options(['accept' => 'Accept', 'off' => 'Off', 'move' => 'Move', 'grade' => 'Grade'])
+                                ->required(),
+                        ])
+                        ->action(function (EloquentCollection $records, array $data) {
+                            $records->each(function ($record) use ($data) {
+                                Student::where('id', $record->id)->update(['status' => $data['Status']]);
                             });
                         }),
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ])                      
-            // ->headerActions([
-            //     Tables\Actions\CreateAction::make(),
-            // ])
+            ])                                 
             ->emptyStateActions([
                 Tables\Actions\CreateAction::make(),
             ]);
@@ -164,7 +157,6 @@ class StudentResource extends Resource
             ->schema([
                 TextEntry::make('nis'),
                 TextEntry::make('name'),
-
             ]);
     }
 }
