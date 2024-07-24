@@ -1,4 +1,6 @@
 <?php
+use Illuminate\Support\Facades\Facade;
+use Illuminate\Support\ServiceProvider;
 
 return [
 
@@ -51,7 +53,18 @@ return [
     | the application so that it's available within Artisan commands.
     |
     */
+    'providers' => ServiceProvider::defaultProviders()->merge([
+        /*
+         * Package Service Providers...
+         */
 
+        /*
+         * Application Service Providers...
+         */
+        App\Providers\AppServiceProvider::class,
+        App\Providers\Filament\AdminPanelProvider::class,
+        Maatwebsite\Excel\ExcelServiceProvider::class
+    ])->toArray(),
     'url' => env('APP_URL', 'http://localhost'),
 
     /*
@@ -105,6 +118,11 @@ return [
         ),
     ],
 
+
+    'aliases' => Facade::defaultAliases()->merge([
+        // 'Example' => App\Facades\Example::class,
+        'Excel' => Maatwebsite\Excel\Facades\Excel::class,
+    ])->toArray(),
     /*
     |--------------------------------------------------------------------------
     | Maintenance Mode Driver
