@@ -14,8 +14,10 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
+use Filament\Notifications\Collection;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
@@ -89,7 +91,9 @@ class StudentResource extends Resource
                     ->label("Birthday"),
                 TextColumn::make('gender'),
                 TextColumn::make('contact'),
-                ImageColumn::make('profile')
+                ImageColumn::make('profile'),
+                TextColumn::make('status')
+                    ->formatStateUsing(fn (string $state): string => ucwords ("{$state}"))
             ])
             ->filters([
                 //
@@ -100,9 +104,24 @@ class StudentResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    BulkAction::make('Accept')
+                        ->icon('heroicon-m-check')
+                        ->requiresConfirmation()
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                            return $records->each->update(['status' => 'accept']);
+                        }),
+                    BulkAction::make('Off')
+                        ->icon('heroicon-m-x-circle')
+                        ->requiresConfirmation()
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                            return $records->each(function ($record) {
+                                $id = $record->id;
+                                Student::where('id', $id)->update(['status' => 'off']);
+                            });
+                        }),
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ])
+            ])                      
             // ->headerActions([
             //     Tables\Actions\CreateAction::make(),
             // ])
