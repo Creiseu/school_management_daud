@@ -3,19 +3,16 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ClassroomResource\Pages;
-use App\Filament\Resources\ClassroomResource\RelationManagers;
+use App\Filament\Resources\ClassroomResource\RelationManagers\SubjectsRelationManager;
 use App\Models\Classroom;
-use Filament\Forms;
+use Filament\Forms\Components\Card;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use stdClass;
 
 class ClassroomResource extends Resource
 {
@@ -23,16 +20,26 @@ class ClassroomResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationLabel = 'Classroom';
+    protected static ?string $navigationLabel = "Class Room";
+
     protected static ?string $navigationGroup = 'Source';
+
+    // protected static bool $shouldRegisterNavigation = false;
+
     protected static ?int $navigationSort = 32;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                TextInput::make('name')->required(),
-                TextInput::make('slug')
+                Card::make()
+                    ->schema([
+                        TextInput::make('name'),
+                        TextInput::make('slug')
+                        ->reactive()
+                            ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', \Str::slug($state))),
+
+                    ])
             ]);
     }
 
@@ -40,18 +47,7 @@ class ClassroomResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('No')->state(
-                    static function (HasTable $livewire, stdClass $rowLoop): string {
-                        return (string) (
-                            $rowLoop->iteration +
-                            ($livewire->getTableRecordsPerPage() * (
-                                $livewire->getTablePage() - 1
-                            ))
-                        );
-                    }
-                ),
-                TextColumn::make('name')
-                    ->label('Nama Kelas'),
+                TextColumn::make('name'),
                 TextColumn::make('slug')
             ])
             ->filters([
@@ -59,19 +55,30 @@ class ClassroomResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+            ])
+            ->emptyStateActions([
+                Tables\Actions\CreateAction::make(),
             ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            SubjectsRelationManager::class
+        ];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ManageClassrooms::route('/'),
+            'index' => Pages\ListClassrooms::route('/'),
+            'create' => Pages\CreateClassroom::route('/create'),
+            'edit' => Pages\EditClassroom::route('/{record}/edit'),
         ];
     }
 }

@@ -6,16 +6,20 @@ use App\Filament\Resources\SubjectResource\Pages;
 use App\Filament\Resources\SubjectResource\RelationManagers;
 use App\Models\Subject;
 use Filament\Forms;
+use Filament\Forms\Components\Card;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use stdClass;
+use Closure;
+use Filament\Forms\Get;
+use Illuminate\Support\Str;
 
 class SubjectResource extends Resource
 {
@@ -23,15 +27,32 @@ class SubjectResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationLabel = 'Subject';
+    protected static ?string $navigationLabel = "Subject";
+
+    protected static ?string $navigationGroup = 'Academic';
+
+    protected static ?int $navigationSort = 24;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                TextInput::make('kode')->required(),
-                TextInput::make('name')->required(),
-                TextInput::make('slug')
+                Card::make()
+                    ->schema([
+                        TextInput::make('kode')
+                        ->searchable(),
+                        TextInput::make('name')
+                            ->label('Subject')
+                            ->live()
+                            ->afterStateUpdated(function (Get $get, Set $set, ?string $old, ?string $state) {
+                                if (($get('slug') ?? '') !== Str::slug($old)) {
+                                    return;
+                                }
+
+                                $set('slug', Str::slug($state));
+                            }),
+                        Hidden::make('slug')
+                    ])->columns(2)
             ]);
     }
 
@@ -39,20 +60,8 @@ class SubjectResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('No')->state(
-                    static function (HasTable $livewire, stdClass $rowLoop): string {
-                        return (string) (
-                            $rowLoop->iteration +
-                            ($livewire->getTableRecordsPerPage() * (
-                                $livewire->getTablePage() - 1
-                            ))
-                        );
-                    }
-                ),
-                TextColumn::make('kode')
-                    ->label('Kode Subjek'),
-                TextColumn::make('name')
-                    ->label('Nama Subjek'),
+                TextColumn::make('kode'),
+                TextColumn::make('name'),
                 TextColumn::make('slug')
             ])
             ->filters([
@@ -60,19 +69,30 @@ class SubjectResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+            ])
+            ->emptyStateActions([
+                Tables\Actions\CreateAction::make(),
             ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ManageSubjects::route('/'),
+            'index' => Pages\ListSubjects::route('/'),
+            'create' => Pages\CreateSubject::route('/create'),
+            'edit' => Pages\EditSubject::route('/{record}/edit'),
         ];
     }
 }
