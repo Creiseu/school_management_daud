@@ -9,6 +9,8 @@ use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Facades\Excel;
+use Filament\Resources\Components\Tab;
+use Illuminate\Database\Eloquent\Builder;
 
 class ListStudents extends ListRecords
 {
@@ -39,4 +41,15 @@ class ListStudents extends ListRecords
         //     'gender' => 'Male'
         // ]);
     }
+
+    public function getTabs(): array
+{
+    return [
+        'all' => Tab::make(),
+        'accept' => Tab::make()
+            ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'accept')),
+        'off' => Tab::make()
+            ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'off')),
+    ];
+}
 }
